@@ -1,15 +1,11 @@
-# resume_app_flask/app.py
-
-from flask import Flask, request, jsonify, render_template, send_from_directory, redirect
+""from flask import Flask, request, jsonify, render_template, send_from_directory, redirect
 from flask_cors import CORS
 from openai import OpenAI
 import os
 import requests
 import logging
-import json
 from datetime import datetime
 from dotenv import load_dotenv
-from werkzeug.exceptions import BadRequest
 import re
 
 # Load environment variables
@@ -46,7 +42,6 @@ if not PDFCO_API_KEY:
 client = OpenAI(api_key=OPENAI_API_KEY)
 start_time = datetime.now()
 
-# Utility functions
 def validate_text_input(text, field_name, min_length=1, max_length=1000):
     if not text or not isinstance(text, str):
         raise ValueError(f"{field_name} must be provided and be a string.")
@@ -62,17 +57,15 @@ def sanitize_html(html_content):
         return ""
     html_content = re.sub(r'<script.*?>.*?</script>', '', html_content, flags=re.IGNORECASE | re.DOTALL)
     html_content = re.sub(r'on\w+="[^"]*"', '', html_content, flags=re.IGNORECASE)
-    html_content = re.sub(r'on\w+=\'[^']*\'', '', html_content, flags=re.IGNORECASE)
+    html_content = re.sub(r"on\w+='[^']*'", '', html_content, flags=re.IGNORECASE)
     return html_content
 
-# Optional HTTPS enforcement
 @app.before_request
-def before_request():
-    if ENVIRONMENT == 'production' and not request.is_secure:
+def enforce_https():
+    if ENVIRONMENT == 'production' and not request.is_secure and request.headers.get('x-forwarded-proto', 'http') != 'https':
         url = request.url.replace("http://", "https://", 1)
         return redirect(url, code=301)
 
-# Error handlers
 @app.errorhandler(400)
 def bad_request(error):
     return jsonify({"error": "Bad request", "status": "error"}), 400
@@ -86,7 +79,6 @@ def internal_error(error):
     logger.error(f"Internal server error: {error}")
     return jsonify({"error": "Internal server error", "status": "error"}), 500
 
-# Routes
 @app.route('/')
 def home():
     try:
@@ -118,7 +110,7 @@ def generate():
         completion = client.chat.completions.create(
             model="gpt-3.5-turbo",
             messages=[
-                {"role": "system", "content": "You are a professional resume writer specializing in ATS-optimized, quantifiable achievement-focused resumes."},
+                {"role": "system", "content": "You are a professional resume writer."},
                 {"role": "user", "content": prompt}
             ],
             max_tokens=1000,
@@ -149,30 +141,9 @@ def generate_pdf():
         html_content = sanitize_html(data.get('html', ''))
         filename = re.sub(r'[<>:"/\\|?*]', '', data.get('filename', 'Resume')).strip() + '.pdf'
 
-        full_html = f"""
-        <!DOCTYPE html>
-        <html>
-        <head>
-            <meta charset='UTF-8'>
-            <title>Resume</title>
-            <style>
-                body {{ font-family: Arial, sans-serif; margin: 20px; line-height: 1.6; color: #333; }}
-                .resume-container {{ max-width: 800px; margin: 0 auto; }}
-                h1, h2, h3 {{ color: #2c3e50; margin-bottom: 10px; }}
-                .section {{ margin-bottom: 20px; }}
-            </style>
-        </head>
-        <body>
-            <div class='resume-container'>
-                {html_content}
-            </div>
-        </body>
-        </html>
-        """
-
         payload = {
             "name": filename,
-            "html": full_html,
+            "html": f"<html><body>{html_content}</body></html>",
             "margins": "10mm",
             "paperSize": "A4",
             "orientation": "portrait",
@@ -239,7 +210,6 @@ def api_info():
         }
     })
 
-# Request logging in development
 @app.before_request
 def log_request():
     if ENVIRONMENT != 'production':
