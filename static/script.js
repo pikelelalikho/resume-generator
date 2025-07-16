@@ -17,6 +17,7 @@ document.addEventListener('DOMContentLoaded', () => {
     addEducationItem();
 });
 
+// ================== EVENT LISTENERS ==================
 function initializeEventListeners() {
     const aiBtn = document.getElementById('generate-ai-btn');
     if (aiBtn) {
@@ -64,69 +65,9 @@ function initializeEventListeners() {
     });
 }
 
+// ================== SKILLS ==================
 function initializeDefaultSkills() {
     ['JavaScript', 'Python', 'Project Management'].forEach(addSkill);
-}
-
-function switchTab(tabName) {
-    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
-    document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
-
-    const activeTab = Array.from(document.querySelectorAll('.tab')).find(tab =>
-        tab.textContent.trim().toLowerCase() === tabName
-    );
-    if (activeTab) activeTab.classList.add('active');
-
-    const activeContent = document.getElementById(`${tabName}-tab`);
-    if (activeContent) activeContent.classList.add('active');
-}
-
-async function generateAIContent() {
-    const btn = document.getElementById('generate-ai-btn');
-    const outputDiv = document.getElementById('ai-output');
-    const role = document.getElementById('role')?.value.trim();
-    const skills = document.getElementById('skills')?.value.trim();
-    const jobDescription = document.getElementById('job-description')?.value.trim();
-
-    if (!role || !skills) {
-        outputDiv.innerHTML = '<div class="error">Please provide your target role and skills.</div>';
-        outputDiv.classList.add('visible');
-        return;
-    }
-
-    btn.classList.add('loading');
-    btn.textContent = 'Generating...';
-    outputDiv.innerHTML = '<div class="loading">Generating content...</div>';
-    outputDiv.classList.add('visible');
-
-    try {
-        const response = await fetch(`${API_BASE_URL}/generate`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ role, skills, job_description: jobDescription })
-        });
-
-        const data = await response.json();
-
-        if (data.status === 'success') {
-            outputDiv.innerHTML = `<div class="success"><strong>AI Generated:</strong><pre>${data.content}</pre></div>`;
-        } else {
-            outputDiv.innerHTML = `<div class="error">Error: ${data.error || data.message || 'Unknown error.'}</div>`;
-        }
-    } catch (error) {
-        outputDiv.innerHTML = `<div class="error">API connection failed: ${error.message}</div>`;
-    } finally {
-        btn.classList.remove('loading');
-        btn.textContent = 'Generate AI Content';
-    }
-}
-
-function handleTemplateSelection(e) {
-    document.querySelectorAll('.template-card').forEach(card => card.classList.remove('selected'));
-    e.currentTarget.classList.add('selected');
-
-    const templateName = e.currentTarget.querySelector('.template-name').textContent.trim().toLowerCase();
-    formData.selectedTemplate = templateName.includes('modern') ? 'modern' : 'classic';
 }
 
 function addSkill(skillName) {
@@ -149,30 +90,89 @@ function removeSkill(skillName) {
     });
 }
 
+// ================== TEMPLATES & TABS ==================
+function handleTemplateSelection(e) {
+    document.querySelectorAll('.template-card').forEach(card => card.classList.remove('selected'));
+    e.currentTarget.classList.add('selected');
+
+    const templateName = e.currentTarget.querySelector('.template-name').textContent.trim().toLowerCase();
+    formData.selectedTemplate = templateName.includes('modern') ? 'modern' : 'classic';
+}
+
+function switchTab(tabName) {
+    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+    document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+
+    const activeTab = Array.from(document.querySelectorAll('.tab')).find(tab =>
+        tab.textContent.trim().toLowerCase() === tabName
+    );
+    if (activeTab) activeTab.classList.add('active');
+
+    const activeContent = document.getElementById(`${tabName}-tab`);
+    if (activeContent) activeContent.classList.add('active');
+}
+
+// ================== EXPERIENCE ==================
 function addExperienceItem() {
-    // existing logic remains unchanged, reuse from your current working app
+    const id = `exp-${Date.now()}`;
+    formData.experiences.push({ id, title: '', company: '', startDate: '', endDate: '', description: '' });
+
+    const container = document.querySelector('.experience-container');
+    const item = document.createElement('div');
+    item.className = 'experience-item';
+    item.id = id;
+    item.innerHTML = `
+        <input placeholder="Job Title" oninput="updateExperienceData(event, '${id}', 'title')"/>
+        <input placeholder="Company" oninput="updateExperienceData(event, '${id}', 'company')"/>
+        <input type="month" placeholder="Start Date" oninput="updateExperienceData(event, '${id}', 'startDate')"/>
+        <input type="month" placeholder="End Date" oninput="updateExperienceData(event, '${id}', 'endDate')"/>
+        <textarea placeholder="Description" oninput="updateExperienceData(event, '${id}', 'description')"></textarea>
+        <button onclick="removeExperienceItem('${id}')">Remove</button>
+    `;
+    container.appendChild(item);
 }
 
 function removeExperienceItem(id) {
-    // existing logic remains unchanged
+    formData.experiences = formData.experiences.filter(exp => exp.id !== id);
+    document.getElementById(id)?.remove();
 }
 
-function updateExperienceData(e) {
-    // existing logic remains unchanged
+function updateExperienceData(e, id, field) {
+    const experience = formData.experiences.find(exp => exp.id === id);
+    if (experience) experience[field] = e.target.value;
 }
 
+// ================== EDUCATION ==================
 function addEducationItem() {
-    // existing logic remains unchanged
+    const id = `edu-${Date.now()}`;
+    formData.education.push({ id, degree: '', institution: '', startDate: '', endDate: '', description: '' });
+
+    const container = document.querySelector('.education-container');
+    const item = document.createElement('div');
+    item.className = 'education-item';
+    item.id = id;
+    item.innerHTML = `
+        <input placeholder="Degree" oninput="updateEducationData(event, '${id}', 'degree')"/>
+        <input placeholder="Institution" oninput="updateEducationData(event, '${id}', 'institution')"/>
+        <input type="month" placeholder="Start Date" oninput="updateEducationData(event, '${id}', 'startDate')"/>
+        <input type="month" placeholder="End Date" oninput="updateEducationData(event, '${id}', 'endDate')"/>
+        <textarea placeholder="Description" oninput="updateEducationData(event, '${id}', 'description')"></textarea>
+        <button onclick="removeEducationItem('${id}')">Remove</button>
+    `;
+    container.appendChild(item);
 }
 
 function removeEducationItem(id) {
-    // existing logic remains unchanged
+    formData.education = formData.education.filter(edu => edu.id !== id);
+    document.getElementById(id)?.remove();
 }
 
-function updateEducationData(e) {
-    // existing logic remains unchanged
+function updateEducationData(e, id, field) {
+    const education = formData.education.find(edu => edu.id === id);
+    if (education) education[field] = e.target.value;
 }
 
+// ================== PERSONAL DATA & PREVIEW ==================
 function collectPersonalData() {
     formData.personal = {
         firstName: document.getElementById('firstName')?.value || '',
@@ -188,31 +188,100 @@ function collectPersonalData() {
 
 function generateResumePreview() {
     collectPersonalData();
-    const resumeContent = document.getElementById('resume-content');
-
     localStorage.setItem('resumeFormData', JSON.stringify(formData)); // Auto-save on generate
 
-    if (formData.selectedTemplate === 'modern') {
-        resumeContent.innerHTML = generateModernTemplate();
-    } else {
-        resumeContent.innerHTML = generateClassicTemplate();
-    }
+    const resumeContent = document.getElementById('resume-content');
+    resumeContent.innerHTML =
+        formData.selectedTemplate === 'modern'
+            ? generateModernTemplate()
+            : generateClassicTemplate();
 }
 
+// ================== TEMPLATES ==================
 function generateModernTemplate() {
-    // your existing modern template rendering remains unchanged
+    return `
+        <div class="resume modern">
+            <h2>${formData.personal.firstName} ${formData.personal.lastName}</h2>
+            <p>${formData.personal.email} | ${formData.personal.phone} | ${formData.personal.location}</p>
+            <p>${formData.personal.website} | ${formData.personal.linkedin}</p>
+            <p>${formData.personal.summary}</p>
+            <h3>Skills</h3>
+            <ul>${formData.skills.map(skill => `<li>${skill}</li>`).join('')}</ul>
+            <h3>Experience</h3>
+            <ul>
+                ${formData.experiences
+                    .map(
+                        exp => `
+                    <li>
+                        <strong>${exp.title}</strong> at ${exp.company} (${formatDate(exp.startDate)} - ${formatDate(exp.endDate)})
+                        <p>${exp.description}</p>
+                    </li>
+                `
+                    )
+                    .join('')}
+            </ul>
+            <h3>Education</h3>
+            <ul>
+                ${formData.education
+                    .map(
+                        edu => `
+                    <li>
+                        <strong>${edu.degree}</strong> at ${edu.institution} (${formatDate(edu.startDate)} - ${formatDate(edu.endDate)})
+                        <p>${edu.description}</p>
+                    </li>
+                `
+                    )
+                    .join('')}
+            </ul>
+        </div>
+    `;
 }
 
 function generateClassicTemplate() {
-    // your existing classic template rendering remains unchanged
+    return `
+        <div class="resume classic">
+            <h1>${formData.personal.firstName} ${formData.personal.lastName}</h1>
+            <p>${formData.personal.email} | ${formData.personal.phone}</p>
+            <h2>Profile</h2>
+            <p>${formData.personal.summary}</p>
+            <h2>Skills</h2>
+            <ul>${formData.skills.map(skill => `<li>${skill}</li>`).join('')}</ul>
+            <h2>Work Experience</h2>
+            ${formData.experiences
+                .map(
+                    exp => `
+                <div>
+                    <h3>${exp.title} - ${exp.company}</h3>
+                    <span>${formatDate(exp.startDate)} - ${formatDate(exp.endDate)}</span>
+                    <p>${exp.description}</p>
+                </div>
+            `
+                )
+                .join('')}
+            <h2>Education</h2>
+            ${formData.education
+                .map(
+                    edu => `
+                <div>
+                    <h3>${edu.degree} - ${edu.institution}</h3>
+                    <span>${formatDate(edu.startDate)} - ${formatDate(edu.endDate)}</span>
+                    <p>${edu.description}</p>
+                </div>
+            `
+                )
+                .join('')}
+        </div>
+    `;
 }
 
+// ================== UTILITY ==================
 function formatDate(dateString) {
     if (!dateString) return '';
     const date = new Date(dateString);
     return date.toLocaleDateString('en-US', { year: 'numeric', month: 'long' });
 }
 
+// ================== PDF DOWNLOAD ==================
 async function downloadPDF() {
     try {
         const { jsPDF } = window.jspdf;
@@ -242,11 +311,11 @@ async function downloadPDF() {
     }
 }
 
+// ================== SCROLL & EXPOSURE ==================
 function scrollToSection(sectionId) {
     document.getElementById(sectionId)?.scrollIntoView({ behavior: 'smooth' });
 }
 
-// Expose functions globally for HTML onclick calls
 window.addExperience = addExperienceItem;
 window.addEducation = addEducationItem;
 window.removeSkill = removeSkill;
