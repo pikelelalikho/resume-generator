@@ -408,9 +408,6 @@ def log_response_info(response):
         logger.info(f"Response: {response.status_code}")
     return response
 
-if __name__ == '__main__':
-    # Configuration based on environment
-    if ENVIRONMENT == 'production':
-        app.run(host='0.0.0.0', port=5000, debug=False)
-    else:
-        app.run(debug=True, host='0.0.0.0', port=5000)
+if __name__ == "__main__":
+    port = int(os.environ.get("PORT", 10000))
+    app.run(host="0.0.0.0", port=port)
